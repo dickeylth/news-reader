@@ -1,10 +1,7 @@
-import { component$, useSignal } from '@builder.io/qwik';
+import { component$ } from '@builder.io/qwik';
 import { routeLoader$, type DocumentHead } from '@builder.io/qwik-city';
 import { formatTime } from '~/utils/date';
 import { GeminiService } from '~/utils/ai-summary';
-
-// 初始化 Gemini 服务
-const geminiService = new GeminiService(process.env.GEMINI_API_KEY);
 
 interface Comment {
   id: number;
@@ -15,7 +12,6 @@ interface Comment {
   replies?: Comment[];
   deleted?: boolean;
   dead?: boolean;
-  summary?: string;
 }
 
 interface Story {
@@ -39,11 +35,6 @@ async function fetchCommentThread(commentId: number, depth: number = 0): Promise
 
   if (comment.dead) return null;
 
-  // Generate AI summary for the comment
-  if (comment.text) {
-    comment.summary = await geminiService.summarize(comment.text);
-  }
-
   if (comment.kids && comment.kids.length > 0) {
     const replies = await Promise.all(
       comment.kids.map(kidId => fetchCommentThread(kidId, depth + 1))
@@ -59,14 +50,41 @@ export const useStoryData = routeLoader$(async (requestEvent) => {
   const storyResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${storyId}.json`);
   const story: Story = await storyResponse.json();
 
-  // 获取顶层评论及其回复
+  // 获取所有评论及其回复
   const comments = await Promise.all(
     (story.kids || []).slice(0, 10).map((commentId: number) => fetchCommentThread(commentId))
   );
 
+  const validComments = comments.filter((comment): comment is Comment => comment !== null);
+
+  // 收集所有评论文本，包括回复
+  function collectCommentTexts(comment: Comment): string[] {
+    const texts: string[] = [];
+    if (comment.text) {
+      texts.push(comment.text);
+    }
+    if (comment.replies) {
+      comment.replies.forEach(reply => {
+        texts.push(...collectCommentTexts(reply));
+      });
+    }
+    return texts;
+  }
+
+  // 收集所有评论文本
+  const allCommentTexts = validComments.flatMap(collectCommentTexts);
+  
+  // 生成总结
+  // 初始化 Gemini 服务
+  const geminiService = new GeminiService(process.env.GEMINI_API_KEY);
+  const summary = allCommentTexts.length > 0 
+    ? await geminiService.summarize(allCommentTexts.join('\n\n'))
+    : '';
+
   return { 
-    story, 
-    comments: comments.filter((comment): comment is Comment => comment !== null)
+    story,
+    comments: validComments,
+    summary
   };
 });
 
@@ -74,7 +92,6 @@ export const useStoryData = routeLoader$(async (requestEvent) => {
 const Comment = component$<{ comment: Comment; depth?: number }>(({ comment, depth = 0 }) => {
   const maxDepth = 3; // 最大显示深度
   const isMaxDepth = depth >= maxDepth;
-  const showSummary = useSignal(true);
 
   if (comment.deleted) {
     return (
@@ -93,109 +110,56 @@ const Comment = component$<{ comment: Comment; depth?: number }>(({ comment, dep
           <span>{formatTime(comment.time)}</span>
         </div>
         {comment.text && (
-          <>
-            {showSummary.value && comment.summary ? (
-              <div class="mb-2">
-                <div class="text-sm text-gray-500 italic mb-1">AI Summary:</div>
-                <div class="text-sm">{comment.summary}</div>
-                <button
-                  onClick$={() => showSummary.value = false}
-                  class="text-xs text-orange-500 hover:text-orange-600 mt-1"
-                >
-                  Show full comment
-                </button>
-              </div>
-            ) : (
-              <div>
-                <div 
-                  class="prose prose-orange max-w-none" 
-                  dangerouslySetInnerHTML={`<div>${comment.text}</div>`}
-                />
-                {comment.summary && (
-                  <button
-                    onClick$={() => showSummary.value = true}
-                    class="text-xs text-orange-500 hover:text-orange-600 mt-2"
-                  >
-                    Show AI summary
-                  </button>
-                )}
-              </div>
-            )}
-          </>
+          <div class="prose prose-sm max-w-none mb-4" dangerouslySetInnerHTML={comment.text} />
+        )}
+        {!isMaxDepth && comment.replies && comment.replies.length > 0 && (
+          <div class="mt-4">
+            {comment.replies.map((reply) => (
+              <Comment key={reply.id} comment={reply} depth={depth + 1} />
+            ))}
+          </div>
         )}
       </div>
-      {!isMaxDepth && comment.replies && comment.replies.length > 0 && (
-        <div class="mt-2 space-y-2">
-          {comment.replies.map(reply => (
-            <Comment key={reply.id} comment={reply} depth={depth + 1} />
-          ))}
-        </div>
-      )}
-      {isMaxDepth && comment.replies && comment.replies.length > 0 && (
-        <div class="mt-2 ml-[--indent] pl-6">
-          <a 
-            href={`#${comment.id}`} 
-            class="text-orange-500 hover:text-orange-600 text-sm"
-          >
-            {comment.replies.length} more replies...
-          </a>
-        </div>
-      )}
     </div>
   );
 });
 
 export default component$(() => {
   const data = useStoryData();
-  const { story, comments } = data.value;
+  const { story, comments, summary } = data.value;
 
   return (
-    <div class="min-h-screen bg-gray-100">
-      <header class="bg-orange-500 p-4">
-        <div class="container mx-auto">
-          <a href="/" class="text-white hover:text-gray-200">← Back to Home</a>
+    <div class="max-w-4xl mx-auto px-4 py-8">
+      <h1 class="text-2xl font-bold mb-4">{story.title}</h1>
+      <div class="mb-8">
+        <div class="text-sm text-gray-600 flex flex-wrap gap-2">
+          <span>{story.score} points</span>
+          <span>•</span>
+          <span>by {story.by}</span>
+          <span>•</span>
+          <span>{formatTime(story.time)}</span>
+          <span>•</span>
+          <span>{story.descendants} comments</span>
         </div>
-      </header>
-      
-      <main class="container mx-auto px-4 py-8">
-        <article class="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <h1 class="text-3xl font-bold text-gray-900 mb-4">{story.title}</h1>
-          <div class="text-gray-600 mb-4 flex flex-wrap gap-2">
-            <span>{story.score} points</span>
-            <span>•</span>
-            <span>by {story.by}</span>
-            <span>•</span>
-            <span>posted {formatTime(story.time)}</span>
-            <span>•</span>
-            <span>{story.descendants || 0} comments</span>
-          </div>
-          {story.url && (
-            <a
-              href={story.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-orange-500 hover:text-orange-600 break-all"
-            >
-              {story.url}
-            </a>
-          )}
-          {story.text && (
-            <div 
-              class="mt-4 prose prose-orange max-w-none" 
-              dangerouslySetInnerHTML={`<div>${story.text}</div>`}
-            />
-          )}
-        </article>
+        {story.url && (
+          <a href={story.url} class="text-orange-600 hover:text-orange-700 text-sm mt-2 block">
+            {story.url}
+          </a>
+        )}
+      </div>
 
-        <section class="mt-8">
-          <h2 class="text-2xl font-bold text-gray-900 mb-6">Comments</h2>
-          <div class="space-y-6">
-            {comments.map(comment => (
-              <Comment key={comment.id} comment={comment} />
-            ))}
-          </div>
-        </section>
-      </main>
+      {summary && (
+        <div class="bg-orange-50 rounded-lg p-4 mb-8">
+          <h2 class="text-lg font-semibold mb-2">评论摘要</h2>
+          <div class="prose prose-sm">{summary}</div>
+        </div>
+      )}
+
+      <div class="space-y-4">
+        {comments.map((comment) => (
+          <Comment key={comment.id} comment={comment} />
+        ))}
+      </div>
     </div>
   );
 });
@@ -207,7 +171,7 @@ export const head: DocumentHead = ({ resolveValue }) => {
     meta: [
       {
         name: "description",
-        content: `${story.title} - Posted by ${story.by} with ${story.descendants || 0} comments`,
+        content: `${story.title} - Posted by ${story.by} with ${story.descendants} comments`,
       },
     ],
   };
