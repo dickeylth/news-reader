@@ -76,7 +76,7 @@ export const useStoryData = routeLoader$(async (requestEvent) => {
   
   // 生成总结
   // 初始化 Gemini 服务
-  const geminiService = new GeminiService(process.env.GEMINI_API_KEY);
+  const geminiService = new GeminiService(requestEvent.env.get('GEMINI_API_KEY'));
   const summary = allCommentTexts.length > 0 
     ? await geminiService.summarize(allCommentTexts.join('\n\n'))
     : '';
