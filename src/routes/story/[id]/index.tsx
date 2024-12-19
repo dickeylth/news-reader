@@ -1,6 +1,10 @@
-import { component$ } from '@builder.io/qwik';
+import { component$, useSignal } from '@builder.io/qwik';
 import { routeLoader$, type DocumentHead } from '@builder.io/qwik-city';
 import { formatTime } from '~/utils/date';
+import { GeminiService } from '~/utils/ai-summary';
+
+// 初始化 Gemini 服务
+const geminiService = new GeminiService(process.env.GEMINI_API_KEY);
 
 interface Comment {
   id: number;
@@ -11,6 +15,7 @@ interface Comment {
   replies?: Comment[];
   deleted?: boolean;
   dead?: boolean;
+  summary?: string;
 }
 
 interface Story {
@@ -32,7 +37,12 @@ async function fetchCommentThread(commentId: number, depth: number = 0): Promise
   const response = await fetch(`https://hacker-news.firebaseio.com/v0/item/${commentId}.json`);
   const comment: Comment = await response.json();
 
-  if (!comment || comment.dead) return null;
+  if (comment.dead) return null;
+
+  // Generate AI summary for the comment
+  if (comment.text) {
+    comment.summary = await geminiService.summarize(comment.text);
+  }
 
   if (comment.kids && comment.kids.length > 0) {
     const replies = await Promise.all(
@@ -64,6 +74,7 @@ export const useStoryData = routeLoader$(async (requestEvent) => {
 const Comment = component$<{ comment: Comment; depth?: number }>(({ comment, depth = 0 }) => {
   const maxDepth = 3; // 最大显示深度
   const isMaxDepth = depth >= maxDepth;
+  const showSummary = useSignal(true);
 
   if (comment.deleted) {
     return (
@@ -82,10 +93,35 @@ const Comment = component$<{ comment: Comment; depth?: number }>(({ comment, dep
           <span>{formatTime(comment.time)}</span>
         </div>
         {comment.text && (
-          <div 
-            class="prose prose-orange max-w-none" 
-            dangerouslySetInnerHTML={`<div>${comment.text}</div>`}
-          />
+          <>
+            {showSummary.value && comment.summary ? (
+              <div class="mb-2">
+                <div class="text-sm text-gray-500 italic mb-1">AI Summary:</div>
+                <div class="text-sm">{comment.summary}</div>
+                <button
+                  onClick$={() => showSummary.value = false}
+                  class="text-xs text-orange-500 hover:text-orange-600 mt-1"
+                >
+                  Show full comment
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div 
+                  class="prose prose-orange max-w-none" 
+                  dangerouslySetInnerHTML={`<div>${comment.text}</div>`}
+                />
+                {comment.summary && (
+                  <button
+                    onClick$={() => showSummary.value = true}
+                    class="text-xs text-orange-500 hover:text-orange-600 mt-2"
+                  >
+                    Show AI summary
+                  </button>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
       {!isMaxDepth && comment.replies && comment.replies.length > 0 && (
