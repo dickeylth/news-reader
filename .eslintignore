@@ -34,5 +34,7 @@ vite.config.ts
 .netlify
 pnpm-lock.yaml
 package-lock.json
+postcss.config.js
+tailwind.config.js
 yarn.lock
 server
