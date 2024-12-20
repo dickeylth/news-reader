@@ -1,4 +1,4 @@
-import { component$, useSignal, useTask$ } from '@builder.io/qwik';
+import { component$, useSignal, useVisibleTask$ } from '@builder.io/qwik';
 import { routeLoader$, type DocumentHead } from '@builder.io/qwik-city';
 import { formatTime } from '~/utils/date';
 import type { Comment, Story } from '~/types/hackernews';
@@ -80,19 +80,16 @@ export default component$(() => {
   const summary = useSignal('');
   const isLoadingSummary = useSignal(false);
 
-  // 修改 useTask$ 的依赖追踪
-  useTask$(async ({ track }) => {
-    // 显式追踪 story 数据
+  // 使用 useVisibleTask$ 替换 useTask$
+  useVisibleTask$(async ({ track }) => {
     const storyData = track(() => data.value);
     
-    // 确保有评论数据
     if (!storyData.comments || storyData.comments.length === 0) {
       return;
     }
     
     isLoadingSummary.value = true;
     try {
-      // 收集评论文本
       const allCommentTexts = storyData.comments.flatMap(comment => {
         function collectCommentTexts(c: Comment): string[] {
           const texts: string[] = [];
@@ -107,7 +104,6 @@ export default component$(() => {
         return collectCommentTexts(comment);
       });
 
-      // 确保有文本内容再发送请求
       if (allCommentTexts.length === 0) {
         return;
       }
