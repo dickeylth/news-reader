@@ -80,16 +80,20 @@ export default component$(() => {
   const summary = useSignal('');
   const isLoadingSummary = useSignal(false);
 
-  // 在组件加载后获取摘要
+  // 修改 useTask$ 的依赖追踪
   useTask$(async ({ track }) => {
-    track(() => data.value.comments);
+    // 显式追踪 story 数据
+    const storyData = track(() => data.value);
     
-    if (data.value.comments.length === 0) return;
+    // 确保有评论数据
+    if (!storyData.comments || storyData.comments.length === 0) {
+      return;
+    }
     
     isLoadingSummary.value = true;
     try {
       // 收集评论文本
-      const allCommentTexts = data.value.comments.flatMap(comment => {
+      const allCommentTexts = storyData.comments.flatMap(comment => {
         function collectCommentTexts(c: Comment): string[] {
           const texts: string[] = [];
           if (c.text) texts.push(c.text);
@@ -103,7 +107,11 @@ export default component$(() => {
         return collectCommentTexts(comment);
       });
 
-      // 调用 API 生成摘要
+      // 确保有文本内容再发送请求
+      if (allCommentTexts.length === 0) {
+        return;
+      }
+
       const response = await fetch('/api/summarize', {
         method: 'POST',
         body: JSON.stringify({ texts: allCommentTexts }),
