@@ -1,30 +1,7 @@
-import { component$ } from '@builder.io/qwik';
+import { component$, useSignal, useTask$ } from '@builder.io/qwik';
 import { routeLoader$, type DocumentHead } from '@builder.io/qwik-city';
 import { formatTime } from '~/utils/date';
-import { GeminiService } from '~/utils/ai-summary';
-
-interface Comment {
-  id: number;
-  by: string;
-  text: string;
-  time: number;
-  kids?: number[];
-  replies?: Comment[];
-  deleted?: boolean;
-  dead?: boolean;
-}
-
-interface Story {
-  id: number;
-  title: string;
-  by: string;
-  time: number;
-  text?: string;
-  url?: string;
-  score: number;
-  descendants: number;
-  kids?: number[];
-}
+import type { Comment, Story } from '~/types/hackernews';
 
 // 递归获取评论及其回复
 async function fetchCommentThread(commentId: number, depth: number = 0): Promise<Comment | null> {
@@ -50,41 +27,15 @@ export const useStoryData = routeLoader$(async (requestEvent) => {
   const storyResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${storyId}.json`);
   const story: Story = await storyResponse.json();
 
-  // 获取所有评论及其回复
   const comments = await Promise.all(
     (story.kids || []).slice(0, 10).map((commentId: number) => fetchCommentThread(commentId))
   );
 
   const validComments = comments.filter((comment): comment is Comment => comment !== null);
 
-  // 收集所有评论文本，包括回复
-  function collectCommentTexts(comment: Comment): string[] {
-    const texts: string[] = [];
-    if (comment.text) {
-      texts.push(comment.text);
-    }
-    if (comment.replies) {
-      comment.replies.forEach(reply => {
-        texts.push(...collectCommentTexts(reply));
-      });
-    }
-    return texts;
-  }
-
-  // 收集所有评论文本
-  const allCommentTexts = validComments.flatMap(collectCommentTexts);
-  
-  // 生成总结
-  // 初始化 Gemini 服务
-  const geminiService = new GeminiService(requestEvent.env.get('GEMINI_API_KEY'));
-  const summary = allCommentTexts.length > 0 
-    ? await geminiService.summarize(allCommentTexts.join('\n\n'))
-    : '';
-
   return { 
     story,
-    comments: validComments,
-    summary
+    comments: validComments
   };
 });
 
@@ -126,37 +77,83 @@ const Comment = component$<{ comment: Comment; depth?: number }>(({ comment, dep
 
 export default component$(() => {
   const data = useStoryData();
-  const { story, comments, summary } = data.value;
+  const summary = useSignal('');
+  const isLoadingSummary = useSignal(false);
+
+  // 在组件加载后获取摘要
+  useTask$(async ({ track }) => {
+    track(() => data.value.comments);
+    
+    if (data.value.comments.length === 0) return;
+    
+    isLoadingSummary.value = true;
+    try {
+      // 收集评论文本
+      const allCommentTexts = data.value.comments.flatMap(comment => {
+        function collectCommentTexts(c: Comment): string[] {
+          const texts: string[] = [];
+          if (c.text) texts.push(c.text);
+          if (c.replies) {
+            c.replies.forEach(reply => {
+              texts.push(...collectCommentTexts(reply));
+            });
+          }
+          return texts;
+        }
+        return collectCommentTexts(comment);
+      });
+
+      // 调用 API 生成摘要
+      const response = await fetch('/api/summarize', {
+        method: 'POST',
+        body: JSON.stringify({ texts: allCommentTexts }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const { summary: newSummary } = await response.json();
+      summary.value = newSummary;
+    } catch (error) {
+      console.error('获取摘要失败:', error);
+    } finally {
+      isLoadingSummary.value = false;
+    }
+  });
 
   return (
     <div class="max-w-4xl mx-auto px-4 py-8">
-      <h1 class="text-2xl font-bold mb-4">{story.title}</h1>
+      <h1 class="text-2xl font-bold mb-4">{data.value.story.title}</h1>
       <div class="mb-8">
         <div class="text-sm text-gray-600 flex flex-wrap gap-2">
-          <span>{story.score} points</span>
+          <span>{data.value.story.score} points</span>
           <span>•</span>
-          <span>by {story.by}</span>
+          <span>by {data.value.story.by}</span>
           <span>•</span>
-          <span>{formatTime(story.time)}</span>
+          <span>{formatTime(data.value.story.time)}</span>
           <span>•</span>
-          <span>{story.descendants} comments</span>
+          <span>{data.value.story.descendants} comments</span>
         </div>
-        {story.url && (
-          <a href={story.url} class="text-orange-600 hover:text-orange-700 text-sm mt-2 block">
-            {story.url}
+        {data.value.story.url && (
+          <a href={data.value.story.url} class="text-orange-600 hover:text-orange-700 text-sm mt-2 block">
+            {data.value.story.url}
           </a>
         )}
       </div>
 
-      {summary && (
+      {isLoadingSummary.value ? (
+        <div class="bg-orange-50 rounded-lg p-4 mb-8">
+          <p class="text-gray-600">正在生成评论摘要...</p>
+        </div>
+      ) : summary.value && (
         <div class="bg-orange-50 rounded-lg p-4 mb-8">
           <h2 class="text-lg font-semibold mb-2">评论摘要</h2>
-          <div class="prose prose-sm">{summary}</div>
+          <div class="prose prose-sm">{summary.value}</div>
         </div>
       )}
 
       <div class="space-y-4">
-        {comments.map((comment) => (
+        {data.value.comments.map((comment) => (
           <Comment key={comment.id} comment={comment} />
         ))}
       </div>
