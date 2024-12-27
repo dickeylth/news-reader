@@ -15,17 +15,17 @@ export class GeminiService implements AISummaryService {
   }
 
   async summarize(content: string): Promise<string> {
-    const prompt = `
-    请对以下内容进行摘要：
+    const prompt = `请对以下评论内容进行摘要总结。要求：
+1. 使用中文回复
+2. 总结要简洁精炼，不超过100字
+3. 结构要清晰，重点突出
+4. 保持客观中立的语气
+5. 如果评论中有多个不同观点，请分点列出主要观点
 
-    ${content}
+以下是需要总结的评论内容：
 
-    要求：
-    - 摘要应清晰简洁。
-    - 使用准确的语言。
-    - 以结构良好的段落呈现信息。
-    - 突出主要观点，避免不必要的细节。
-    `;
+${content}`;
+
     try {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
         method: 'POST',
@@ -40,7 +40,8 @@ export class GeminiService implements AISummaryService {
       });
 
       const result = await response.json();
-      return result.summary || "Failed to generate summary";
+      // 根据 Gemini API 的实际返回格式获取文本内容
+      return result.candidates?.[0]?.content?.parts?.[0]?.text || "Failed to generate summary";
     } catch (error) {
       console.error('Error generating summary with Google Gemini:', error);
       return "Failed to generate summary";
