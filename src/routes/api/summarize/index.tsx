@@ -10,7 +10,13 @@ export const onPost: RequestHandler = async (requestEvent) => {
       return;
     }
 
-    const geminiService = new GeminiService(requestEvent.env.get('GEMINI_API_KEY'));
+    const apiKey = requestEvent.env.get('GEMINI_API_KEY');
+    if (!apiKey) {
+      requestEvent.send(500, 'missing API KEY');
+      return;
+    }
+
+    const geminiService = new GeminiService(apiKey);
     const summary = await geminiService.summarize(texts.join('\n\n'));
     
     requestEvent.send(200, { summary });
