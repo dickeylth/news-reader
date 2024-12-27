@@ -41,7 +41,7 @@ export const useStoryData = routeLoader$(async (requestEvent) => {
 
   const validComments = comments.filter((comment): comment is Comment => comment !== null);
 
-  return { 
+  return {
     story,
     comments: validComments
   };
@@ -61,18 +61,21 @@ const Comment = component$<{ comment: Comment; depth?: number }>(({ comment, dep
   }
 
   return (
-    <div class="comment" style={{ '--indent': `${depth * 24}px` }}>
-      <div class={`bg-white rounded-lg shadow p-4 ml-[--indent] ${depth > 0 ? 'border-l-2 border-orange-200' : ''}`}>
-        <div class="text-sm text-gray-600 mb-2 flex flex-wrap gap-2">
+    <div class="comment" style={{ '--indent': `${depth * 16}px` }}>
+      <div class={`bg-white rounded-lg shadow-sm p-2.5 ml-[--indent] ${depth > 0 ? 'border-l border-orange-200' : ''}`}>
+        <div class="text-xs text-gray-500 mb-1.5 flex flex-wrap gap-1.5">
           <span>by {comment.by}</span>
           <span>•</span>
           <span>{formatTime(comment.time)}</span>
         </div>
         {comment.text && (
-          <div class="prose prose-sm max-w-none mb-4" dangerouslySetInnerHTML={comment.text} />
+          <div 
+            class="prose prose-sm max-w-none text-sm [&>p]:!my-1.5 [&>ul]:!my-1.5 [&>ol]:!my-1.5 [&>pre]:!my-2" 
+            dangerouslySetInnerHTML={comment.text}
+          />
         )}
         {!isMaxDepth && comment.replies && comment.replies.length > 0 && (
-          <div class="mt-4">
+          <div class="mt-2">
             {comment.replies.map((reply) => (
               <Comment key={reply.id} comment={reply} depth={depth + 1} />
             ))}
@@ -92,11 +95,11 @@ export default component$(() => {
   // 使用 useVisibleTask$ 替换 useTask$
   useVisibleTask$(async ({ track }) => {
     const storyData = track(() => data.value);
-    
+
     if (!storyData.comments || storyData.comments.length === 0) {
       return;
     }
-    
+
     isLoadingSummary.value = true;
     try {
       const allCommentTexts = storyData.comments.flatMap(comment => {
@@ -124,7 +127,7 @@ export default component$(() => {
           'Content-Type': 'application/json',
         },
       });
-      
+
       const resJSON = await response.json();
       summary.value = resJSON.summary;
       // 将 markdown 转换为 HTML

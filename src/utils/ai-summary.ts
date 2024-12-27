@@ -18,7 +18,7 @@ export class GeminiService implements AISummaryService {
   async summarize(content: string): Promise<string> {
     const prompt = `请对以下评论内容进行摘要总结。要求：
 1. 使用中文回复
-2. 总结要简洁精炼，不超过100字
+2. 总结要简洁精炼，不超过200字
 3. 结构要清晰，重点突出
 4. 保持客观中立的语气
 5. 如果评论中有多个不同观点，请分点列出主要观点
