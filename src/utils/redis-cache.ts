@@ -13,7 +13,7 @@ export class RedisCacheService {
   }
 
   private generateKey(commentIds: number[]): string {
-    return `summary:${commentIds.sort().join(',')}`;
+    return `summaryComments:${commentIds.sort().join(',')}`;
   }
 
   async getSummary(commentIds: number[]): Promise<string | null> {
