@@ -116,8 +116,8 @@ export default component$(() => {
         },
       });
       
-      const { summary: newSummary } = await response.json();
-      summary.value = newSummary;
+      const resJSON = await response.json();
+      summary.value = resJSON.summary;
     } catch (error) {
       console.error('获取摘要失败:', error);
     } finally {
