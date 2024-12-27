@@ -17,10 +17,16 @@ export class GeminiService implements AISummaryService {
 
   async summarize(text: string): Promise<string> {
     try {
-      const result = await this.model.generateContent(`
-        请总结以下评论的主要观点：
-        ${text}
-      `);
+      const prompt = `请对以下评论内容进行摘要总结。要求：
+1. 使用中文回复
+2. 总结要简洁精炼，不超过300字
+3. 结构要清晰，重点突出
+4. 保持客观中立的语气
+5. 如果评论中有多个不同观点，请分点列出主要观点
+以下是需要总结的评论内容：
+${text}`;
+
+      const result = await this.model.generateContent(prompt);
 
       const summary = result.response.text();
 
