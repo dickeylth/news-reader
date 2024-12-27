@@ -2,6 +2,14 @@ import { component$, useSignal, useVisibleTask$ } from '@builder.io/qwik';
 import { routeLoader$, type DocumentHead } from '@builder.io/qwik-city';
 import { formatTime } from '~/utils/date';
 import type { Comment, Story } from '~/types/hackernews';
+import MarkdownIt from 'markdown-it';
+
+// 初始化 markdown-it
+const md = new MarkdownIt({
+  html: true,
+  breaks: true,
+  linkify: true
+});
 
 // 递归获取评论及其回复
 async function fetchCommentThread(commentId: number, depth: number = 0): Promise<Comment | null> {
@@ -78,6 +86,7 @@ const Comment = component$<{ comment: Comment; depth?: number }>(({ comment, dep
 export default component$(() => {
   const data = useStoryData();
   const summary = useSignal('');
+  const renderedSummary = useSignal('');
   const isLoadingSummary = useSignal(false);
 
   // 使用 useVisibleTask$ 替换 useTask$
@@ -118,6 +127,8 @@ export default component$(() => {
       
       const resJSON = await response.json();
       summary.value = resJSON.summary;
+      // 将 markdown 转换为 HTML
+      renderedSummary.value = md.render(resJSON.summary);
     } catch (error) {
       console.error('获取摘要失败:', error);
     } finally {
@@ -152,7 +163,7 @@ export default component$(() => {
       ) : summary.value && (
         <div class="bg-orange-50 rounded-lg p-4 mb-8">
           <h2 class="text-lg font-semibold mb-2">评论摘要</h2>
-          <div class="prose prose-sm">{summary.value}</div>
+          <div class="prose prose-sm" dangerouslySetInnerHTML={renderedSummary.value} />
         </div>
       )}
 

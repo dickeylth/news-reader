@@ -33,6 +33,7 @@
     "@builder.io/qwik": "^1.11.0",
     "@builder.io/qwik-city": "^1.12.0",
     "@types/eslint": "8.56.10",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "20.14.11",
     "@typescript-eslint/eslint-plugin": "7.16.1",
     "@typescript-eslint/parser": "7.16.1",
@@ -53,6 +54,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
     "dayjs": "^1.11.13",
+    "markdown-it": "^14.1.0",
     "openai": "^4.75.0"
   },
   "lint-staged": {
