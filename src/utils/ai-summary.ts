@@ -39,8 +39,9 @@ ${content}`;
         }),
       });
 
-      const result = await response.json();
-      // 根据 Gemini API 的实际返回格式获取文本内容
+      // 读取响应文本
+      const text = await response.text();
+      const result = JSON.parse(text);
       return result.candidates?.[0]?.content?.parts?.[0]?.text || "Failed to generate summary";
     } catch (error) {
       console.error('Error generating summary with Google Gemini:', error);
