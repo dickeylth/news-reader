@@ -39,10 +39,25 @@ ${content}`;
         }),
       });
 
-      // 读取响应文本
-      const text = await response.text();
-      const result = JSON.parse(text);
-      return result.candidates?.[0]?.content?.parts?.[0]?.text || "Failed to generate summary";
+      // 处理 ReadableStream
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No readable stream available');
+      }
+
+      let result = '';
+      let reading = true;
+      while (reading) {
+        const { done, value } = await reader.read();
+        if (done) {
+          reading = false;
+          continue;
+        }
+        result += new TextDecoder().decode(value);
+      }
+
+      const parsedResult = JSON.parse(result);
+      return parsedResult.candidates?.[0]?.content?.parts?.[0]?.text || "Failed to generate summary";
     } catch (error) {
       console.error('Error generating summary with Google Gemini:', error);
       return "Failed to generate summary";
