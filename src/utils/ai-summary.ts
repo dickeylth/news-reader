@@ -1,3 +1,6 @@
+import type { GenerativeModel } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
 // AI Summary Service Interface
 export interface AISummaryService {
   summarize(text: string): Promise<string>;
@@ -5,13 +8,11 @@ export interface AISummaryService {
 
 // Google Gemini Implementation
 export class GeminiService implements AISummaryService {
-  private apiKey: string;
+  private model: GenerativeModel;
 
-  constructor(apiKey?: string) {
-    if (!apiKey) {
-      throw new Error('API key is required for Google Gemini.');
-    }
-    this.apiKey = apiKey;
+  constructor(apiKey: string) {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    this.model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   }
 
   async summarize(content: string): Promise<string> {
@@ -27,21 +28,8 @@ export class GeminiService implements AISummaryService {
 ${content}`;
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{ text: prompt }]
-          }]
-        }),
-      });
-
-      const result = await response.text();
-      const parsedResult = JSON.parse(result);
-      return parsedResult.candidates?.[0]?.content?.parts?.[0]?.text || "Failed to generate summary";
+      const result = await this.model.generateContent(prompt);
+      return result.response.text();
     } catch (error) {
       console.error('Error generating summary with Google Gemini:', error);
       return "Failed to generate summary";
