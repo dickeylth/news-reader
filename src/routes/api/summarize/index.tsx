@@ -19,8 +19,8 @@ export const onPost: RequestHandler = async (requestEvent) => {
     const geminiService = new GeminiService(apiKey);
     const summary = await geminiService.summarize(texts.join('\n\n'));
     
-    requestEvent.send(200, { summary });
+    requestEvent.json(200, { summary });
   } catch (error) {
-    requestEvent.send(500, { error: '生成摘要时出错' });
+    requestEvent.json(500, { error: '生成摘要时出错' });
   }
 }; 
