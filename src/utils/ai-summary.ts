@@ -39,23 +39,7 @@ ${content}`;
         }),
       });
 
-      // 处理 ReadableStream
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('No readable stream available');
-      }
-
-      let result = '';
-      let reading = true;
-      while (reading) {
-        const { done, value } = await reader.read();
-        if (done) {
-          reading = false;
-          continue;
-        }
-        result += new TextDecoder().decode(value);
-      }
-
+      const result = await response.text();
       const parsedResult = JSON.parse(result);
       return parsedResult.candidates?.[0]?.content?.parts?.[0]?.text || "Failed to generate summary";
     } catch (error) {
