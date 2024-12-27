@@ -55,7 +55,7 @@
     "@google/generative-ai": "^0.21.0",
     "dayjs": "^1.11.13",
     "markdown-it": "^14.1.0",
-    "openai": "^4.75.0"
+    "@upstash/redis": "^1.28.4"
   },
   "lint-staged": {
     "*.ts": "eslint --fix",

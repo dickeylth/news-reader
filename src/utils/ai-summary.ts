@@ -1,5 +1,5 @@
-import type { GenerativeModel } from '@google/generative-ai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import type { GenerativeModel } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // AI Summary Service Interface
 export interface AISummaryService {
@@ -15,24 +15,24 @@ export class GeminiService implements AISummaryService {
     this.model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   }
 
-  async summarize(content: string): Promise<string> {
-    const prompt = `请对以下评论内容进行摘要总结。要求：
-1. 使用中文回复
-2. 总结要简洁精炼，不超过200字
-3. 结构要清晰，重点突出
-4. 保持客观中立的语气
-5. 如果评论中有多个不同观点，请分点列出主要观点
-
-以下是需要总结的评论内容：
-
-${content}`;
-
+  async summarize(text: string): Promise<string> {
     try {
-      const result = await this.model.generateContent(prompt);
-      return result.response.text();
+      const result = await this.model.generateContent(`
+        请总结以下评论的主要观点：
+        ${text}
+      `);
+
+      const summary = result.response.text();
+
+      if (!summary || summary.trim().length === 0) {
+        throw new Error("AI 生成的摘要为空");
+      }
+
+      return summary;
     } catch (error) {
-      console.error('Error generating summary with Google Gemini:', error);
-      return "Failed to generate summary";
+      throw new Error(
+        `生成摘要失败: ${error instanceof Error ? error.message : "未知错误"}`
+      );
     }
   }
 }

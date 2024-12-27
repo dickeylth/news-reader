@@ -102,27 +102,9 @@ export default component$(() => {
 
     isLoadingSummary.value = true;
     try {
-      const allCommentTexts = storyData.comments.flatMap(comment => {
-        function collectCommentTexts(c: Comment): string[] {
-          const texts: string[] = [];
-          if (c.text) texts.push(c.text);
-          if (c.replies) {
-            c.replies.forEach(reply => {
-              texts.push(...collectCommentTexts(reply));
-            });
-          }
-          return texts;
-        }
-        return collectCommentTexts(comment);
-      });
-
-      if (allCommentTexts.length === 0) {
-        return;
-      }
-
       const response = await fetch('/api/summarize', {
         method: 'POST',
-        body: JSON.stringify({ texts: allCommentTexts }),
+        body: JSON.stringify({ comments: storyData.comments }),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -130,7 +112,6 @@ export default component$(() => {
 
       const resJSON = await response.json();
       summary.value = resJSON.summary;
-      // 将 markdown 转换为 HTML
       renderedSummary.value = md.render(resJSON.summary);
     } catch (error) {
       console.error('获取摘要失败:', error);
