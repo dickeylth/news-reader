@@ -19,4 +19,5 @@ export interface Story {
   score: number;
   descendants: number;
   kids?: number[];
+  lastCommentTime: number;
 } 

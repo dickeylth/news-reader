@@ -1,7 +1,10 @@
-import { component$, useSignal, useVisibleTask$, $, useOnWindow } from '@builder.io/qwik';
+import { component$, useSignal, useTask$, $, useOnWindow } from '@builder.io/qwik';
 import { routeLoader$ } from '@builder.io/qwik-city';
 import type { DocumentHead } from "@builder.io/qwik-city";
-import { formatTime } from '~/utils/date';
+import { Header } from '~/components/Header';
+import { StoryItem } from '~/components/StoryItem';
+import { LoadingSpinner } from '~/components/LoadingSpinner';
+import type { Story } from '~/types/hackernews';
 
 export const useNewsData = routeLoader$(async () => {
   const response = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
@@ -11,7 +14,7 @@ export const useNewsData = routeLoader$(async () => {
 
 export default component$(() => {
   const storyIds = useNewsData();
-  const stories = useSignal<any[]>([]);
+  const stories = useSignal<Story[]>([]);
   const page = useSignal(0);
   const loading = useSignal(false);
   const hasMore = useSignal(true);
@@ -35,7 +38,7 @@ export default component$(() => {
     const newStories = await Promise.all(
       currentBatch.map(async (id: number) => {
         const storyResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`);
-        const story = await storyResponse.json();
+        const story = await storyResponse.json() as Story;
         
         // 如果有评论，获取最后一条评论的时间
         if (story.kids && story.kids.length > 0) {
@@ -57,7 +60,8 @@ export default component$(() => {
   });
 
   // 初始加载
-  useVisibleTask$(async () => {
+  useTask$(async ({ track }) => {
+    track(() => storyIds.value);
     await loadMoreStories();
   });
 
@@ -77,45 +81,14 @@ export default component$(() => {
 
   return (
     <div class="min-h-screen bg-gray-100">
-      <header class="bg-orange-500 p-4 sticky top-0 z-10">
-        <h1 class="text-2xl font-bold text-white">Hacker News Reader</h1>
-      </header>
+      <Header />
       <main class="container mx-auto px-4 py-8">
         <ul class="space-y-4">
-          {stories.value.map((story: any) => (
-            <li key={story.id} class="bg-white p-4 rounded-lg shadow">
-              <a href={`/story/${story.id}`} class="block">
-                <h2 class="text-xl font-semibold text-gray-900 hover:text-orange-500">
-                  {story.title}
-                </h2>
-                <div class="mt-2 text-sm text-gray-600 flex flex-wrap gap-2">
-                  <span>{story.score} points</span>
-                  <span>•</span>
-                  <span>by {story.by}</span>
-                  <span>•</span>
-                  <span>created {formatTime(story.time)}</span>
-                  {story.descendants > 0 && (
-                    <>
-                      <span>•</span>
-                      <span>{story.descendants} comments</span>
-                      {story.time !== story.lastCommentTime && (
-                        <>
-                          <span>•</span>
-                          <span>last comment {formatTime(story.lastCommentTime)}</span>
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
-              </a>
-            </li>
+          {stories.value.map((story) => (
+            <StoryItem key={story.id} story={story} />
           ))}
         </ul>
-        {loading.value && (
-          <div class="flex justify-center py-4">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-          </div>
-        )}
+        {loading.value && <LoadingSpinner />}
         {!hasMore.value && (
           <div class="text-center py-4 text-gray-600">
             No more stories to load
