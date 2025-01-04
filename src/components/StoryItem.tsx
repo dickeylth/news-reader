@@ -2,9 +2,10 @@ import { component$ } from '@builder.io/qwik';
 import { formatTime } from '~/utils/date';
 import type { Story } from '~/types/hackernews';
 
-export const StoryItem = component$<{ story: Story }>(({ story }) => {
+export const StoryItem = component$<{ story: Story; isSelected?: boolean }>(({ story, isSelected }) => {
   return (
-    <li class="bg-white p-4 rounded-lg shadow">
+    <div class={`bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer
+      ${isSelected ? 'ring-2 ring-orange-500' : ''}`}>
       <a href={`/story/${story.id}`} class="block">
         <h2 class="text-xl font-semibold text-gray-900 hover:text-orange-500">
           {story.title}
@@ -29,6 +30,6 @@ export const StoryItem = component$<{ story: Story }>(({ story }) => {
           )}
         </div>
       </a>
-    </li>
+    </div>
   );
 }); 

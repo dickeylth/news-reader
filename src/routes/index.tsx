@@ -5,6 +5,7 @@ import { Header } from '~/components/Header';
 import { StoryItem } from '~/components/StoryItem';
 import { LoadingSpinner } from '~/components/LoadingSpinner';
 import type { Story } from '~/types/hackernews';
+import { StoryDetail } from '~/components/story-detail/story-detail';
 
 export const useNewsData = routeLoader$(async () => {
   const response = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
@@ -18,6 +19,7 @@ export default component$(() => {
   const page = useSignal(0);
   const loading = useSignal(false);
   const hasMore = useSignal(true);
+  const selectedStoryId = useSignal<string>('');
   const ITEMS_PER_PAGE = 10;
 
   // 加载更多故事的函数
@@ -82,18 +84,35 @@ export default component$(() => {
   return (
     <div class="min-h-screen bg-gray-100">
       <Header />
-      <main class="container mx-auto px-4 py-8">
-        <ul class="space-y-4">
-          {stories.value.map((story) => (
-            <StoryItem key={story.id} story={story} />
-          ))}
-        </ul>
-        {loading.value && <LoadingSpinner />}
-        {!hasMore.value && (
-          <div class="text-center py-4 text-gray-600">
-            No more stories to load
+      <main class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
+          {/* 左侧故事列表 */}
+          <div class="stories-column overflow-y-auto h-screen">
+            <div class="px-4 py-8">
+              <ul class="space-y-4">
+                {stories.value.map((story) => (
+                  <li key={story.id} onClick$={() => selectedStoryId.value = story.id.toString()}>
+                    <StoryItem 
+                      story={story} 
+                      isSelected={selectedStoryId.value === story.id.toString()}
+                    />
+                  </li>
+                ))}
+              </ul>
+              {loading.value && <LoadingSpinner />}
+              {!hasMore.value && (
+                <div class="text-center py-4 text-gray-600">
+                  没有更多故事了
+                </div>
+              )}
+            </div>
           </div>
-        )}
+          
+          {/* 右侧详情 */}
+          <div class="h-screen overflow-y-auto border-l">
+            <StoryDetail storyId={selectedStoryId.value} />
+          </div>
+        </div>
       </main>
     </div>
   );
