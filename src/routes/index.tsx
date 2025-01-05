@@ -1,11 +1,11 @@
-import { component$, useSignal, useTask$, $, useOnWindow } from '@builder.io/qwik';
-import { routeLoader$ } from '@builder.io/qwik-city';
+import { $, component$, useOnWindow, useSignal, useTask$ } from '@builder.io/qwik';
 import type { DocumentHead } from "@builder.io/qwik-city";
+import { routeLoader$ } from '@builder.io/qwik-city';
 import { Header } from '~/components/Header';
-import { StoryItem } from '~/components/StoryItem';
 import { LoadingSpinner } from '~/components/LoadingSpinner';
+import { StoryDetail } from '~/components/StoryDetail';
+import { StoryItem } from '~/components/StoryItem';
 import type { Story } from '~/types/hackernews';
-import { StoryDetail } from '~/components/story-detail/story-detail';
 
 export const useNewsData = routeLoader$(async () => {
   const response = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
