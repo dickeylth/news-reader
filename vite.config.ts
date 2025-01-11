@@ -62,7 +62,13 @@ export default defineConfig(({ command, mode }): UserConfig => {
       noExternal: ['*'],
       external: [
         'chrome-aws-lambda',
-        'puppeteer-core'
+        'puppeteer-core',
+        'path',
+        'fs',
+        'os',
+        'child_process',
+        'util',
+        'crypto',
       ]
     },
   };
