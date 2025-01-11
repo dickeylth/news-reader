@@ -69,6 +69,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
         'child_process',
         'util',
         'crypto',
+        'vm',
       ]
     },
   };
