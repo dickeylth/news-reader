@@ -79,7 +79,7 @@ export const StoryDetail = component$<{storyId: string}>(({ storyId }) => {
               <span>{storyData.value.story.descendants} comments</span>
             </div>
             {storyData.value.story.url && (
-              <a href={storyData.value.story.url} class="text-orange-600 hover:text-orange-700 text-sm mt-2 block">
+              <a href={storyData.value.story.url} class="text-orange-600 hover:text-orange-700 text-sm mt-2 block" target='_blank' rel='noopener noreferrer'>
                 {storyData.value.story.url}
               </a>
             )}
