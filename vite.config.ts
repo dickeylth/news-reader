@@ -81,6 +81,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
         'zlib',
         'stream',
         'https-proxy-agent',
+        'string_decoder',
       ]
     },
   };
