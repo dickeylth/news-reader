@@ -80,6 +80,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
         'tls',
         'zlib',
         'stream',
+        'https-proxy-agent',
       ]
     },
   };
