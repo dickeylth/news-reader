@@ -18,12 +18,6 @@ export default function StoryItem({ story, isSelected }: { story: Story; isSelec
           <>
             <span>•</span>
             <span>{story.descendants} comments</span>
-            {story.time !== story.lastCommentTime && (
-              <>
-                <span>•</span>
-                <span>last comment {formatTime(story.lastCommentTime)}</span>
-              </>
-            )}
           </>
         )}
       </div>
