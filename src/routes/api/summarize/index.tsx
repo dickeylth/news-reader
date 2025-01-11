@@ -1,5 +1,7 @@
 import type { RequestHandler } from '@builder.io/qwik-city';
+import axios from 'axios';
 import chromium from 'chrome-aws-lambda';
+import { JSDOM } from 'jsdom';
 import puppeteer from 'puppeteer-core';
 import type { Comment } from '~/types/hackernews';
 import { GeminiService } from '~/utils/ai-summary';
@@ -26,7 +28,21 @@ function collectCommentIds(comment: Comment): number[] {
   return ids;
 }
 
-async function extractMainContent(url: string): Promise<string> {
+function extractContentWithJSDOM(html: string): string {
+  const dom = new JSDOM(html);
+  const document = dom.window.document;
+  
+  // 移除不需要的元素
+  ['script', 'style', 'nav', 'header', 'footer'].forEach(tag => {
+    document.querySelectorAll(tag).forEach(el => el.remove());
+  });
+  
+  // 获取主要内容
+  const article = document.querySelector('article') || document.body;
+  return article.textContent?.trim() || '';
+}
+
+async function extractContentWithPuppeteer(url: string): Promise<string> {
   const browser = await puppeteer.launch({
     args: chromium.args,
     executablePath: await chromium.executablePath,
@@ -36,18 +52,14 @@ async function extractMainContent(url: string): Promise<string> {
   try {
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-    
-    // 等待页面加载完成
     await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
     
-    // 移除不需要的元素
     await page.evaluate(() => {
       ['script', 'style', 'nav', 'header', 'footer'].forEach(tag => {
         document.querySelectorAll(tag).forEach(el => el.remove());
       });
     });
     
-    // 获取主要内容
     const content = await page.evaluate(() => {
       const article = document.querySelector('article') || document.body;
       return article.textContent?.trim() || '';
@@ -56,6 +68,29 @@ async function extractMainContent(url: string): Promise<string> {
     return content;
   } finally {
     await browser.close();
+  }
+}
+
+async function extractMainContent(url: string): Promise<string> {
+  try {
+    // 首先尝试使用 JSDOM
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      }
+    });
+    const content = extractContentWithJSDOM(response.data);
+    
+    // 如果内容为空，降级到 Puppeteer
+    if (!content || content.length < 100) {
+      console.log('JSDOM 提取内容为空，尝试使用 Puppeteer');
+      return extractContentWithPuppeteer(url);
+    }
+    
+    return content;
+  } catch (error) {
+    console.error('JSDOM 提取失败，尝试使用 Puppeteer:', error);
+    return extractContentWithPuppeteer(url);
   }
 }
 
