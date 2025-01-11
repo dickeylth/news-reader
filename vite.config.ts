@@ -71,7 +71,15 @@ export default defineConfig(({ command, mode }): UserConfig => {
         'crypto',
         'vm',
         'jsom',
-        'events'
+        'events',
+        'url',
+        'http',
+        'https',
+        'net',
+        'dns',
+        'tls',
+        'zlib',
+        'stream',
       ]
     },
   };
