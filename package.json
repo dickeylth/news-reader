@@ -56,9 +56,11 @@
     "@google/generative-ai": "^0.21.0",
     "@upstash/redis": "^1.28.4",
     "axios": "^1.7.9",
+    "chrome-aws-lambda": "^10.1.0",
     "dayjs": "^1.11.13",
     "jsdom": "^26.0.0",
-    "markdown-it": "^14.1.0"
+    "markdown-it": "^14.1.0",
+    "puppeteer-core": "^24.0.0"
   },
   "lint-staged": {
     "*.ts": "eslint --fix",

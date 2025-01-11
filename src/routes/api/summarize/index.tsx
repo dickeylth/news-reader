@@ -1,6 +1,6 @@
 import type { RequestHandler } from '@builder.io/qwik-city';
-import axios from 'axios';
-import { JSDOM } from 'jsdom';
+import chromium from 'chrome-aws-lambda';
+import puppeteer from 'puppeteer-core';
 import type { Comment } from '~/types/hackernews';
 import { GeminiService } from '~/utils/ai-summary';
 import { RedisCacheService } from '~/utils/redis-cache';
@@ -26,18 +26,37 @@ function collectCommentIds(comment: Comment): number[] {
   return ids;
 }
 
-function extractMainContent(html: string): string {
-  const dom = new JSDOM(html);
-  const document = dom.window.document;
-  
-  // 移除不需要的元素
-  ['script', 'style', 'nav', 'header', 'footer'].forEach(tag => {
-    document.querySelectorAll(tag).forEach(el => el.remove());
+async function extractMainContent(url: string): Promise<string> {
+  const browser = await puppeteer.launch({
+    args: chromium.args,
+    executablePath: await chromium.executablePath,
+    headless: true,
   });
-  
-  // 获取主要内容
-  const article = document.querySelector('article') || document.body;
-  return article.textContent?.trim() || '';
+
+  try {
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    
+    // 等待页面加载完成
+    await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
+    
+    // 移除不需要的元素
+    await page.evaluate(() => {
+      ['script', 'style', 'nav', 'header', 'footer'].forEach(tag => {
+        document.querySelectorAll(tag).forEach(el => el.remove());
+      });
+    });
+    
+    // 获取主要内容
+    const content = await page.evaluate(() => {
+      const article = document.querySelector('article') || document.body;
+      return article.textContent?.trim() || '';
+    });
+
+    return content;
+  } finally {
+    await browser.close();
+  }
 }
 
 export const onPost: RequestHandler = async (requestEvent) => {
@@ -48,24 +67,7 @@ export const onPost: RequestHandler = async (requestEvent) => {
     
     if (body.url) {
       // 处理 URL 内容
-      const response = await axios.get(body.url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
-          'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120"',
-          'Sec-Ch-Ua-Mobile': '?0',
-          'Sec-Ch-Ua-Platform': '"Windows"',
-          'Sec-Fetch-Dest': 'document',
-          'Sec-Fetch-Mode': 'navigate',
-          'Sec-Fetch-Site': 'none',
-          'Sec-Fetch-User': '?1',
-          'Upgrade-Insecure-Requests': '1'
-        }
-      });
-      const content = extractMainContent(response.data);
+      const content = await extractMainContent(body.url);
       textToSummarize = content;
       cacheKey = [`url:${body.url}`];
     } else if (body.comments) {
