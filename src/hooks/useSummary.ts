@@ -13,7 +13,10 @@ export function useContentSummary(url: string | undefined) {
   const [isLoadingContentSummary, setIsLoadingContentSummary] = useState(false);
 
   useEffect(() => {
-    if (!url) return;
+    if (!url) {
+      setContentSummary('');
+      return;
+    }
 
     const fetchContentSummary = async () => {
       setIsLoadingContentSummary(true);
@@ -43,7 +46,10 @@ export function useCommentsSummary(comments: CommentType[]) {
   const [isLoadingCommentsSummary, setIsLoadingCommentsSummary] = useState(false);
 
   useEffect(() => {
-    if (comments.length === 0) return;
+    if (comments.length === 0) {
+      setCommentsSummary('');
+      return;
+    }
 
     const fetchCommentsSummary = async () => {
       setIsLoadingCommentsSummary(true);
