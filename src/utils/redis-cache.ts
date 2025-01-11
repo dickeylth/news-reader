@@ -16,13 +16,13 @@ export class RedisCacheService {
     return `summaryComments:${commentIds.sort().join(',')}`;
   }
 
-  async getSummary(commentIds: number[]): Promise<string | null> {
-    const key = this.generateKey(commentIds);
+  async getSummary(keys: string[] | number[]): Promise<string | null> {
+    const key = keys.map(String).sort().join(',');
     return this.redis.get<string>(key);
   }
 
-  async setSummary(commentIds: number[], summary: string): Promise<void> {
-    const key = this.generateKey(commentIds);
+  async setSummary(keys: string[] | number[], summary: string): Promise<void> {
+    const key = keys.map(String).sort().join(',');
     await this.redis.set(key, summary, {
       ex: this.CACHE_TTL
     });

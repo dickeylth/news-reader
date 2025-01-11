@@ -15,7 +15,9 @@ const md = new MarkdownIt({
 export const StoryDetail = component$<{storyId: string}>(({ storyId }) => {
   const summary = useSignal('');
   const renderedSummary = useSignal('');
+  const contentSummary = useSignal('');
   const isLoadingSummary = useSignal(false);
+  const isLoadingContent = useSignal(false);
   const isLoadingStory = useSignal(false);
   const storyData = useSignal<{story: Story, comments: Comment[]} | null>(null);
 
@@ -30,6 +32,25 @@ export const StoryDetail = component$<{storyId: string}>(({ storyId }) => {
 
       const comments = await fetchStoryComments(currentStoryId);
       storyData.value = { story, comments };
+
+      if (story.url) {
+        isLoadingContent.value = true;
+        try {
+          const response = await fetch('/api/summarize', {
+            method: 'POST',
+            body: JSON.stringify({ url: story.url }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          const resJSON = await response.json();
+          contentSummary.value = resJSON.summary;
+        } catch (error) {
+          console.error('获取内容摘要失败:', error);
+        } finally {
+          isLoadingContent.value = false;
+        }
+      }
 
       if (comments.length > 0) {
         isLoadingSummary.value = true;
@@ -84,6 +105,20 @@ export const StoryDetail = component$<{storyId: string}>(({ storyId }) => {
               </a>
             )}
           </div>
+
+          {isLoadingContent.value ? (
+            <div class="bg-orange-50 rounded-lg p-4 mb-8">
+              <div class="flex items-center space-x-3">
+                <LoadingSpinner />
+                <p class="text-gray-600">正在生成内容摘要...</p>
+              </div>
+            </div>
+          ) : contentSummary.value && (
+            <div class="bg-orange-50 rounded-lg p-4 mb-8">
+              <h2 class="text-lg font-semibold mb-2">内容摘要</h2>
+              <div class="prose prose-sm">{contentSummary.value}</div>
+            </div>
+          )}
 
           {isLoadingSummary.value ? (
             <div class="bg-orange-50 rounded-lg p-4 mb-8">
