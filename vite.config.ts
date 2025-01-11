@@ -58,6 +58,13 @@ export default defineConfig(({ command, mode }): UserConfig => {
         "Cache-Control": "public, max-age=600",
       },
     },
+    ssr: {
+      noExternal: ['*'],
+      external: [
+        'chrome-aws-lambda',
+        'puppeteer-core'
+      ]
+    },
   };
 });
 
