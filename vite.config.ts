@@ -70,6 +70,8 @@ export default defineConfig(({ command, mode }): UserConfig => {
         'util',
         'crypto',
         'vm',
+        'jsom',
+        'events'
       ]
     },
   };
