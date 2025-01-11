@@ -71,7 +71,7 @@ export default function StoryDetail({ storyId }: { storyId: string }) {
           ) : contentSummary && (
             <div className="bg-orange-50 rounded-lg p-4 mb-8">
               <h2 className="text-lg font-semibold mb-2">内容摘要</h2>
-              <div className="prose prose-sm" dangerouslySetInnerHTML={{ __html: contentSummary }}></div>
+              <div className="prose prose-sm markdown-body" dangerouslySetInnerHTML={{ __html: contentSummary }}></div>
             </div>
           )}
 
@@ -85,7 +85,7 @@ export default function StoryDetail({ storyId }: { storyId: string }) {
           ) : commentsSummary && (
             <div className="bg-orange-50 rounded-lg p-4 mb-8">
               <h2 className="text-lg font-semibold mb-2">评论摘要</h2>
-              <div className="prose prose-sm" dangerouslySetInnerHTML={{ __html: commentsSummary }}></div>
+              <div className="prose prose-sm markdown-body" dangerouslySetInnerHTML={{ __html: commentsSummary }}></div>
             </div>
           )}
 
