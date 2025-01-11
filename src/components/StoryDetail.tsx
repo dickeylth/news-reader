@@ -7,12 +7,13 @@ import Comment from './Comment';
 import LoadingSpinner from './LoadingSpinner';
 import { useContentSummary, useCommentsSummary } from '@/hooks/useSummary';
 
+
 export default function StoryDetail({ storyId }: { storyId: string }) {
   const [storyData, setStoryData] = useState<{story: Story, comments: CommentType[]} | null>(null);
   const [isLoadingStory, setIsLoadingStory] = useState(false);
   
-  const { contentSummary, isLoadingContent } = useContentSummary(storyData?.story.url);
-  const { commentsSummary: summary, isLoadingSummary } = useCommentsSummary(storyData?.comments || []);
+  const { contentSummary, isLoadingContentSummary } = useContentSummary(storyData?.story.url);
+  const { commentsSummary, isLoadingCommentsSummary } = useCommentsSummary(storyData?.comments || []);
 
   useEffect(() => {
     if (!storyId) return;
@@ -60,7 +61,7 @@ export default function StoryDetail({ storyId }: { storyId: string }) {
             )}
           </div>
 
-          {isLoadingContent ? (
+          {isLoadingContentSummary ? (
             <div className="bg-orange-50 rounded-lg p-4 mb-8">
               <div className="flex items-center space-x-3">
                 <LoadingSpinner />
@@ -70,21 +71,21 @@ export default function StoryDetail({ storyId }: { storyId: string }) {
           ) : contentSummary && (
             <div className="bg-orange-50 rounded-lg p-4 mb-8">
               <h2 className="text-lg font-semibold mb-2">内容摘要</h2>
-              <div className="prose prose-sm">{contentSummary}</div>
+              <div className="prose prose-sm" dangerouslySetInnerHTML={{ __html: contentSummary }}></div>
             </div>
           )}
 
-          {isLoadingSummary ? (
+          {isLoadingCommentsSummary ? (
             <div className="bg-orange-50 rounded-lg p-4 mb-8">
               <div className="flex items-center space-x-3">
                 <LoadingSpinner />
                 <p className="text-gray-600">正在生成评论摘要...</p>
               </div>
             </div>
-          ) : summary && (
+          ) : commentsSummary && (
             <div className="bg-orange-50 rounded-lg p-4 mb-8">
               <h2 className="text-lg font-semibold mb-2">评论摘要</h2>
-              <div className="prose prose-sm">{summary}</div>
+              <div className="prose prose-sm" dangerouslySetInnerHTML={{ __html: commentsSummary }}></div>
             </div>
           )}
 

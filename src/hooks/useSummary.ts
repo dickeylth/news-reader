@@ -1,15 +1,22 @@
 import { useState, useEffect } from 'react';
 import type { Comment as CommentType } from '@/types/hackernews';
+import MarkdownIt from 'markdown-it';
+
+const md = new MarkdownIt({
+  html: true,
+  breaks: true,
+  linkify: true
+});
 
 export function useContentSummary(url: string | undefined) {
   const [contentSummary, setContentSummary] = useState('');
-  const [isLoadingContent, setIsLoadingContent] = useState(false);
+  const [isLoadingContentSummary, setIsLoadingContentSummary] = useState(false);
 
   useEffect(() => {
     if (!url) return;
 
     const fetchContentSummary = async () => {
-      setIsLoadingContent(true);
+      setIsLoadingContentSummary(true);
       try {
         const contentResponse = await fetch('/api/summarize', {
           method: 'POST',
@@ -17,29 +24,29 @@ export function useContentSummary(url: string | undefined) {
           headers: { 'Content-Type': 'application/json' },
         });
         const { summary } = await contentResponse.json();
-        setContentSummary(summary);
+        setContentSummary(md.render(summary));
       } catch (error) {
         console.error('获取内容摘要失败:', error);
       } finally {
-        setIsLoadingContent(false);
+        setIsLoadingContentSummary(false);
       }
     };
 
     fetchContentSummary();
   }, [url]);
 
-  return { contentSummary, isLoadingContent };
+  return { contentSummary, isLoadingContentSummary };
 }
 
 export function useCommentsSummary(comments: CommentType[]) {
   const [commentsSummary, setCommentsSummary] = useState('');
-  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+  const [isLoadingCommentsSummary, setIsLoadingCommentsSummary] = useState(false);
 
   useEffect(() => {
     if (comments.length === 0) return;
 
     const fetchCommentsSummary = async () => {
-      setIsLoadingSummary(true);
+      setIsLoadingCommentsSummary(true);
       try {
         const summaryResponse = await fetch('/api/summarize', {
           method: 'POST',
@@ -47,16 +54,16 @@ export function useCommentsSummary(comments: CommentType[]) {
           headers: { 'Content-Type': 'application/json' },
         });
         const { summary } = await summaryResponse.json();
-        setCommentsSummary(summary);
+        setCommentsSummary(md.render(summary));
       } catch (error) {
         console.error('获取评论摘要失败:', error);
       } finally {
-        setIsLoadingSummary(false);
+        setIsLoadingCommentsSummary(false);
       }
     };
 
     fetchCommentsSummary();
   }, [comments]);
 
-  return { commentsSummary, isLoadingSummary };
+  return { commentsSummary, isLoadingCommentsSummary };
 } 
