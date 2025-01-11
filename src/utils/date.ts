@@ -1,9 +1,9 @@
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-
-// 扩展 dayjs 以支持相对时间
-dayjs.extend(relativeTime);
+import { formatDistanceToNow } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 
 export function formatTime(timestamp: number): string {
-  return dayjs.unix(timestamp).fromNow();
+  return formatDistanceToNow(new Date(timestamp * 1000), {
+    addSuffix: true,
+    locale: zhCN
+  });
 }

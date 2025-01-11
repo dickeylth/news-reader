@@ -38,3 +38,4 @@ postcss.config.js
 tailwind.config.js
 yarn.lock
 server
+next.config.js

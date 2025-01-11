@@ -7,14 +7,13 @@ module.exports = {
   },
   extends: [
     "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:qwik/recommended",
+    "plugin:@typescript-eslint/recommended"
   ],
   parser: "@typescript-eslint/parser",
   parserOptions: {
     tsconfigRootDir: __dirname,
     project: ["./tsconfig.json"],
-    ecmaVersion: 2021,
+    ecmaVersion: 2022,
     sourceType: "module",
     ecmaFeatures: {
       jsx: true,

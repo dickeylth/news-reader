@@ -1,4 +1,4 @@
-import type { Comment, Story } from '~/types/hackernews';
+import type { Comment, Story } from '@/types/hackernews';
 
 export async function fetchStory(id: number): Promise<Story | null> {
   try {

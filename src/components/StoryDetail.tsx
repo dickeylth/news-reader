@@ -1,150 +1,138 @@
-import { component$, useSignal, useVisibleTask$ } from '@builder.io/qwik';
-import { fetchStory, fetchStoryComments } from '~/utils/hackernews';
-import type { Comment, Story } from '~/types/hackernews';
-import MarkdownIt from 'markdown-it';
-import { formatTime } from '~/utils/date';
-import { Comment as CommentComponent } from '~/components/comment/comment';
-import { LoadingSpinner } from '~/components/LoadingSpinner';
+'use client';
 
-const md = new MarkdownIt({
-  html: true,
-  breaks: true,
-  linkify: true
-});
+import { useEffect, useState } from 'react';
+import { formatTime } from '@/utils/date';
+import type { Comment as CommentType, Story } from '@/types/hackernews';
+import Comment from './Comment';
+import LoadingSpinner from './LoadingSpinner';
 
-export const StoryDetail = component$<{storyId: string}>(({ storyId }) => {
-  const summary = useSignal('');
-  const renderedSummary = useSignal('');
-  const contentSummary = useSignal('');
-  const isLoadingSummary = useSignal(false);
-  const isLoadingContent = useSignal(false);
-  const isLoadingStory = useSignal(false);
-  const storyData = useSignal<{story: Story, comments: Comment[]} | null>(null);
+export default function StoryDetail({ storyId }: { storyId: string }) {
+  const [storyData, setStoryData] = useState<{story: Story, comments: CommentType[]} | null>(null);
+  const [summary, setSummary] = useState('');
+  const [contentSummary, setContentSummary] = useState('');
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+  const [isLoadingContent, setIsLoadingContent] = useState(false);
+  const [isLoadingStory, setIsLoadingStory] = useState(false);
 
-  useVisibleTask$(async ({ track }) => {
-    const currentStoryId = track(() => storyId);
-    if (!currentStoryId) return;
+  useEffect(() => {
+    if (!storyId) return;
 
-    isLoadingStory.value = true;
-    try {
-      const story = await fetchStory(Number(currentStoryId));
-      if (!story) return;
+    const fetchStoryData = async () => {
+      setIsLoadingStory(true);
+      try {
+        const response = await fetch(`/api/story/${storyId}`);
+        const data = await response.json();
+        setStoryData(data);
 
-      const comments = await fetchStoryComments(currentStoryId);
-      storyData.value = { story, comments };
-
-      if (story.url) {
-        isLoadingContent.value = true;
-        try {
-          const response = await fetch('/api/summarize', {
-            method: 'POST',
-            body: JSON.stringify({ url: story.url }),
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-          const resJSON = await response.json();
-          contentSummary.value = resJSON.summary;
-        } catch (error) {
-          console.error('获取内容摘要失败:', error);
-        } finally {
-          isLoadingContent.value = false;
+        if (data.story.url) {
+          setIsLoadingContent(true);
+          try {
+            const contentResponse = await fetch('/api/summarize', {
+              method: 'POST',
+              body: JSON.stringify({ url: data.story.url }),
+              headers: { 'Content-Type': 'application/json' },
+            });
+            const { summary } = await contentResponse.json();
+            setContentSummary(summary);
+          } catch (error) {
+            console.error('获取内容摘要失败:', error);
+          } finally {
+            setIsLoadingContent(false);
+          }
         }
-      }
 
-      if (comments.length > 0) {
-        isLoadingSummary.value = true;
-        try {
-          const response = await fetch('/api/summarize', {
-            method: 'POST',
-            body: JSON.stringify({ comments }),
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-
-          const resJSON = await response.json();
-          summary.value = resJSON.summary;
-          renderedSummary.value = md.render(resJSON.summary);
-        } catch (error) {
-          console.error('获取摘要失败:', error);
-        } finally {
-          isLoadingSummary.value = false;
+        if (data.comments.length > 0) {
+          setIsLoadingSummary(true);
+          try {
+            const summaryResponse = await fetch('/api/summarize', {
+              method: 'POST',
+              body: JSON.stringify({ comments: data.comments }),
+              headers: { 'Content-Type': 'application/json' },
+            });
+            const { summary } = await summaryResponse.json();
+            setSummary(summary);
+          } catch (error) {
+            console.error('获取评论摘要失败:', error);
+          } finally {
+            setIsLoadingSummary(false);
+          }
         }
+      } catch (error) {
+        console.error('加载故事失败:', error);
+      } finally {
+        setIsLoadingStory(false);
       }
-    } catch (error) {
-      console.error('加载故事失败:', error);
-    } finally {
-      isLoadingStory.value = false;
-    }
-  });
+    };
+
+    fetchStoryData();
+  }, [storyId]);
 
   return (
-    <div class="h-full p-4">
-      {isLoadingStory.value ? (
-        <div class="flex flex-col items-center justify-center h-full space-y-4">
+    <div className="h-full p-4">
+      {isLoadingStory ? (
+        <div className="flex flex-col items-center justify-center h-full space-y-4">
           <LoadingSpinner />
-          <p class="text-gray-600">加载故事中...</p>
+          <p className="text-gray-600">加载故事中...</p>
         </div>
-      ) : storyData.value ? (
+      ) : storyData ? (
         <>
-          <h1 class="text-2xl font-bold mb-4">{storyData.value.story.title}</h1>
-          <div class="mb-8">
-            <div class="text-sm text-gray-600 flex flex-wrap gap-2">
-              <span>{storyData.value.story.score} points</span>
+          <h1 className="text-2xl font-bold mb-4">{storyData.story.title}</h1>
+          <div className="mb-8">
+            <div className="text-sm text-gray-600 flex flex-wrap gap-2">
+              <span>{storyData.story.score} points</span>
               <span>•</span>
-              <span>by {storyData.value.story.by}</span>
+              <span>by {storyData.story.by}</span>
               <span>•</span>
-              <span>{formatTime(storyData.value.story.time)}</span>
+              <span>{formatTime(storyData.story.time)}</span>
               <span>•</span>
-              <span>{storyData.value.story.descendants} comments</span>
+              <span>{storyData.story.descendants} comments</span>
             </div>
-            {storyData.value.story.url && (
-              <a href={storyData.value.story.url} class="text-orange-600 hover:text-orange-700 text-sm mt-2 block" target='_blank' rel='noopener noreferrer'>
-                {storyData.value.story.url}
+            {storyData.story.url && (
+              <a href={storyData.story.url} className="text-orange-600 hover:text-orange-700 text-sm mt-2 block" target='_blank' rel='noopener noreferrer'>
+                {storyData.story.url}
               </a>
             )}
           </div>
 
-          {isLoadingContent.value ? (
-            <div class="bg-orange-50 rounded-lg p-4 mb-8">
-              <div class="flex items-center space-x-3">
+          {isLoadingContent ? (
+            <div className="bg-orange-50 rounded-lg p-4 mb-8">
+              <div className="flex items-center space-x-3">
                 <LoadingSpinner />
-                <p class="text-gray-600">正在生成内容摘要...</p>
+                <p className="text-gray-600">正在生成内容摘要...</p>
               </div>
             </div>
-          ) : contentSummary.value && (
-            <div class="bg-orange-50 rounded-lg p-4 mb-8">
-              <h2 class="text-lg font-semibold mb-2">内容摘要</h2>
-              <div class="prose prose-sm">{contentSummary.value}</div>
+          ) : contentSummary && (
+            <div className="bg-orange-50 rounded-lg p-4 mb-8">
+              <h2 className="text-lg font-semibold mb-2">内容摘要</h2>
+              <div className="prose prose-sm">{contentSummary}</div>
             </div>
           )}
 
-          {isLoadingSummary.value ? (
-            <div class="bg-orange-50 rounded-lg p-4 mb-8">
-              <div class="flex items-center space-x-3">
+          {isLoadingSummary ? (
+            <div className="bg-orange-50 rounded-lg p-4 mb-8">
+              <div className="flex items-center space-x-3">
                 <LoadingSpinner />
-                <p class="text-gray-600">正在生成评论摘要...</p>
+                <p className="text-gray-600">正在生成评论摘要...</p>
               </div>
             </div>
-          ) : summary.value && (
-            <div class="bg-orange-50 rounded-lg p-4 mb-8">
-              <h2 class="text-lg font-semibold mb-2">评论摘要</h2>
-              <div class="prose prose-sm" dangerouslySetInnerHTML={renderedSummary.value} />
+          ) : summary && (
+            <div className="bg-orange-50 rounded-lg p-4 mb-8">
+              <h2 className="text-lg font-semibold mb-2">评论摘要</h2>
+              <div className="prose prose-sm">{summary}</div>
             </div>
           )}
 
-          <div class="space-y-4">
-            {storyData.value.comments.map((comment) => (
-              <CommentComponent key={comment.id} comment={comment} />
+          <div className="space-y-4">
+            {storyData.comments.map((comment) => (
+              <Comment key={comment.id} comment={comment} />
             ))}
           </div>
         </>
       ) : (
-        <div class="flex items-center justify-center h-full">
-          <p class="text-gray-500">请选择一个故事查看详情</p>
+        <div className="flex items-center justify-center h-full">
+          <p className="text-gray-500">请选择一个故事查看详情</p>
         </div>
       )}
     </div>
   );
-}); 
+} 

@@ -1,18 +1,11 @@
-import type { GenerativeModel } from "@google/generative-ai";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// AI Summary Service Interface
-export interface AISummaryService {
-  summarize(text: string): Promise<string>;
-}
-
-// Google Gemini Implementation
-export class GeminiService implements AISummaryService {
-  private model: GenerativeModel;
+export class GeminiService {
+  private model;
 
   constructor(apiKey: string) {
     const genAI = new GoogleGenerativeAI(apiKey);
-    this.model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    this.model = genAI.getGenerativeModel({ model: 'gemini-pro' });
   }
 
   async summarize(text: string): Promise<string> {
@@ -22,24 +15,16 @@ export class GeminiService implements AISummaryService {
 2. 总结要简洁精炼，不超过300字
 3. 结构要清晰，重点突出
 4. 保持客观中立的语气
-5. 如果评论中有多个不同观点，请分点列出主要观点，并确保观点的标题和描述之间有空格分隔
+5. 如果内容中有多个不同观点，请分点列出主要观点，并确保观点的标题和描述之间有空格分隔
 6. 确保输出是合法的 markdown 格式，在标记语法和文本之间有空格分隔
-以下是需要总结的评论内容：
+以下是需要总结的内容：
 ${text}`;
 
       const result = await this.model.generateContent(prompt);
-
-      const summary = result.response.text();
-
-      if (!summary || summary.trim().length === 0) {
-        throw new Error("AI 生成的摘要为空");
-      }
-
-      return summary;
+      return result.response.text();
     } catch (error) {
-      throw new Error(
-        `生成摘要失败: ${error instanceof Error ? error.message : "未知错误"}`
-      );
+      console.error('生成摘要失败:', error);
+      throw error;
     }
   }
 }
