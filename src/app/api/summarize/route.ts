@@ -8,12 +8,21 @@ import axios from 'axios';
 
 export const runtime = 'edge';
 
-function collectCommentTexts(comment: Comment): string[] {
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  throw new Error('Missing API key')
+}
+const geminiService = new GeminiService(apiKey);
+
+function collectCommentTexts(comment: Comment, isReply: boolean = false): string[] {
   const texts: string[] = [];
-  if (comment.text) texts.push(comment.text);
+  if (comment.text) {
+    texts.push(`${isReply ? '\t' : ''}${comment.by} says: [${comment.text}] at ${comment.time}\n`);
+  }
   if (comment.replies) {
+    texts.push(`${isReply ? '\t' : ''}${comment.by} has ${comment.replies.length} replies:\n`);
     comment.replies.forEach(reply => {
-      texts.push(...collectCommentTexts(reply));
+      texts.push(...collectCommentTexts(reply, true));
     });
   }
   return texts;
@@ -41,7 +50,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as { comments?: Comment[], url?: string };
     let textToSummarize = '';
     let cacheKey: string[] = [];
-    
+
     if (body.url) {
       const response = await axios.get(body.url, {
         headers: {
@@ -66,18 +75,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ summary: cachedSummary });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: 'Missing API key' }, { status: 500 });
-    }
-
-    const geminiService = new GeminiService(apiKey);
     const summary = await geminiService.summarize(textToSummarize);
-    
     if (summary) {
       await cacheService.setSummary(cacheKey, summary);
     }
-    
+
     return NextResponse.json({ summary });
   } catch (error) {
     return NextResponse.json({ error: '生成摘要时出错: ' + error }, { status: 500 });
