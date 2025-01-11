@@ -5,14 +5,14 @@ import { formatTime } from '@/utils/date';
 import type { Comment as CommentType, Story } from '@/types/hackernews';
 import Comment from './Comment';
 import LoadingSpinner from './LoadingSpinner';
+import { useContentSummary, useCommentsSummary } from '@/hooks/useSummary';
 
 export default function StoryDetail({ storyId }: { storyId: string }) {
   const [storyData, setStoryData] = useState<{story: Story, comments: CommentType[]} | null>(null);
-  const [summary, setSummary] = useState('');
-  const [contentSummary, setContentSummary] = useState('');
-  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
-  const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [isLoadingStory, setIsLoadingStory] = useState(false);
+  
+  const { contentSummary, isLoadingContent } = useContentSummary(storyData?.story.url);
+  const { commentsSummary: summary, isLoadingSummary } = useCommentsSummary(storyData?.comments || []);
 
   useEffect(() => {
     if (!storyId) return;
@@ -23,40 +23,6 @@ export default function StoryDetail({ storyId }: { storyId: string }) {
         const response = await fetch(`/api/story/${storyId}`);
         const data = await response.json();
         setStoryData(data);
-
-        if (data.story.url) {
-          setIsLoadingContent(true);
-          try {
-            const contentResponse = await fetch('/api/summarize', {
-              method: 'POST',
-              body: JSON.stringify({ url: data.story.url }),
-              headers: { 'Content-Type': 'application/json' },
-            });
-            const { summary } = await contentResponse.json();
-            setContentSummary(summary);
-          } catch (error) {
-            console.error('获取内容摘要失败:', error);
-          } finally {
-            setIsLoadingContent(false);
-          }
-        }
-
-        if (data.comments.length > 0) {
-          setIsLoadingSummary(true);
-          try {
-            const summaryResponse = await fetch('/api/summarize', {
-              method: 'POST',
-              body: JSON.stringify({ comments: data.comments }),
-              headers: { 'Content-Type': 'application/json' },
-            });
-            const { summary } = await summaryResponse.json();
-            setSummary(summary);
-          } catch (error) {
-            console.error('获取评论摘要失败:', error);
-          } finally {
-            setIsLoadingSummary(false);
-          }
-        }
       } catch (error) {
         console.error('加载故事失败:', error);
       } finally {

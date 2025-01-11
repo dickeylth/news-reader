@@ -10,7 +10,7 @@ export class GeminiService {
 
   async summarize(text: string): Promise<string> {
     try {
-      const prompt = `请对以下评论内容进行摘要总结。要求：
+      const prompt = `请对以下内容进行摘要总结。要求：
 1. 使用中文回复
 2. 总结要简洁精炼，不超过300字
 3. 结构要清晰，重点突出
