@@ -8,7 +8,7 @@ import StoryItemSkeleton from '@/components/StoryItemSkeleton';
 
 export default function Home() {
   const [stories, setStories] = useState<Story[]>([]);
-  const [selectedStoryId, setSelectedStoryId] = useState<string>('');
+  const [selectedStoryId, setSelectedStoryId] = useState<number | null>(null);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -91,7 +91,7 @@ export default function Home() {
           </div>
           
           <div className="h-screen overflow-y-auto border-l">
-            <StoryDetail storyId={selectedStoryId} />
+            <StoryDetail storyId={selectedStoryId?.toString() || ''} />
           </div>
         </div>
       </div>
