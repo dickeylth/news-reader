@@ -82,6 +82,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ summary });
   } catch (error) {
-    return NextResponse.json({ error: '生成摘要时出错: ' + error }, { status: 500 });
+    return NextResponse.json({ error }, { status: 500 });
   }
 } 
