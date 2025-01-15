@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { Story } from '@/types/hackernews';
 import StoryItem from '@/components/StoryItem';
 import StoryDetail from '@/components/StoryDetail';
+import StoryItemSkeleton from '@/components/StoryItemSkeleton';
 
 export default function Home() {
   const [stories, setStories] = useState<Story[]>([]);
@@ -59,20 +60,31 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
           <div className="stories-column overflow-y-auto h-screen">
             <div className="px-4 py-8">
-              <ul className="space-y-4">
-                {stories.map((story) => (
-                  <li key={story.id} onClick={() => setSelectedStoryId(story.id.toString())}>
+              <div className="space-y-4">
+                {loading ? (
+                  Array.from({ length: 10 }).map((_, index) => (
+                    <StoryItemSkeleton key={index} />
+                  ))
+                ) : (
+                  stories.map(story => (
                     <StoryItem 
-                      story={story} 
-                      isSelected={selectedStoryId === story.id.toString()}
+                      key={story.id} 
+                      story={story}
+                      isSelected={selectedStoryId === story.id}
+                      onClick={() => setSelectedStoryId(story.id)}
                     />
-                  </li>
-                ))}
-              </ul>
-              {loading && <div className="text-center py-4">Loading...</div>}
-              {!hasMore && (
-                <div className="text-center py-4 text-gray-600">
-                  没有更多故事了
+                  ))
+                )}
+              </div>
+              
+              {!loading && hasMore && (
+                <div className="text-center py-4">
+                  <button 
+                    onClick={loadMoreStories}
+                    className="text-orange-600 hover:text-orange-700"
+                  >
+                    加载更多
+                  </button>
                 </div>
               )}
             </div>
