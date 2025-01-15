@@ -18,6 +18,7 @@ export default function StoryItemSkeleton() {
         story={SKELETON_STORY}
         isSelected={false}
         onClick={() => {}}
+        isSkeleton={true}
       />
     </div>
   );
