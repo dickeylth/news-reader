@@ -11,29 +11,38 @@ const md = new MarkdownIt({
 export function useContentSummary(url: string | undefined) {
   const [contentSummary, setContentSummary] = useState<string>('');
   const [isLoadingContentSummary, setIsLoadingContentSummary] = useState(false);
+  const [contentError, setContentError] = useState<string>('');
 
   const resetContentSummary = useCallback(() => {
     setContentSummary('');
     setIsLoadingContentSummary(false);
+    setContentError('');
   }, []);
 
   useEffect(() => {
     if (!url) {
       setContentSummary('');
+      setContentError('');
       return;
     }
 
     const fetchContentSummary = async () => {
       setIsLoadingContentSummary(true);
+      setContentError('');
       try {
         const contentResponse = await fetch('/api/summarize', {
           method: 'POST',
           body: JSON.stringify({ url }),
           headers: { 'Content-Type': 'application/json' },
         });
-        const { summary } = await contentResponse.json();
-        setContentSummary(md.render(summary));
+        const data = await contentResponse.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        setContentSummary(md.render(data.summary));
       } catch (error) {
+        const message = error instanceof Error ? error.message : '获取内容摘要失败';
+        setContentError(message);
         console.error('获取内容摘要失败:', error);
       } finally {
         setIsLoadingContentSummary(false);
@@ -43,35 +52,44 @@ export function useContentSummary(url: string | undefined) {
     fetchContentSummary();
   }, [url]);
 
-  return { contentSummary, isLoadingContentSummary, resetContentSummary };
+  return { contentSummary, isLoadingContentSummary, contentError, resetContentSummary };
 }
 
 export function useCommentsSummary(comments: CommentType[]) {
   const [commentsSummary, setCommentsSummary] = useState<string>('');
   const [isLoadingCommentsSummary, setIsLoadingCommentsSummary] = useState(false);
+  const [commentsError, setCommentsError] = useState<string>('');
 
   const resetCommentsSummary = useCallback(() => {
     setCommentsSummary('');
     setIsLoadingCommentsSummary(false);
+    setCommentsError('');
   }, []);
 
   useEffect(() => {
     if (comments.length === 0) {
       setCommentsSummary('');
+      setCommentsError('');
       return;
     }
 
     const fetchCommentsSummary = async () => {
       setIsLoadingCommentsSummary(true);
+      setCommentsError('');
       try {
         const summaryResponse = await fetch('/api/summarize', {
           method: 'POST',
           body: JSON.stringify({ comments }),
           headers: { 'Content-Type': 'application/json' },
         });
-        const { summary } = await summaryResponse.json();
-        setCommentsSummary(md.render(summary));
+        const data = await summaryResponse.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        setCommentsSummary(md.render(data.summary));
       } catch (error) {
+        const message = error instanceof Error ? error.message : '获取评论摘要失败';
+        setCommentsError(message);
         console.error('获取评论摘要失败:', error);
       } finally {
         setIsLoadingCommentsSummary(false);
@@ -81,5 +99,5 @@ export function useCommentsSummary(comments: CommentType[]) {
     fetchCommentsSummary();
   }, [comments]);
 
-  return { commentsSummary, isLoadingCommentsSummary, resetCommentsSummary };
+  return { commentsSummary, isLoadingCommentsSummary, commentsError, resetCommentsSummary };
 } 
