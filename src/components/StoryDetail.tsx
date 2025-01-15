@@ -12,10 +12,14 @@ export default function StoryDetail({ storyId }: { storyId: string }) {
   const [storyData, setStoryData] = useState<{story: Story, comments: CommentType[]} | null>(null);
   const [isLoadingStory, setIsLoadingStory] = useState(false);
   
-  const { contentSummary, isLoadingContentSummary } = useContentSummary(storyData?.story.url);
-  const { commentsSummary, isLoadingCommentsSummary } = useCommentsSummary(storyData?.comments || []);
+  const { contentSummary, isLoadingContentSummary, resetContentSummary } = useContentSummary(storyData?.story.url);
+  const { commentsSummary, isLoadingCommentsSummary, resetCommentsSummary } = useCommentsSummary(storyData?.comments || []);
 
   useEffect(() => {
+    setStoryData(null);
+    resetContentSummary();
+    resetCommentsSummary();
+
     if (!storyId) return;
 
     const fetchStoryData = async () => {

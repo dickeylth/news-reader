@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Comment as CommentType } from '@/types/hackernews';
 import MarkdownIt from 'markdown-it';
 
@@ -9,8 +9,13 @@ const md = new MarkdownIt({
 });
 
 export function useContentSummary(url: string | undefined) {
-  const [contentSummary, setContentSummary] = useState('');
+  const [contentSummary, setContentSummary] = useState<string>('');
   const [isLoadingContentSummary, setIsLoadingContentSummary] = useState(false);
+
+  const resetContentSummary = useCallback(() => {
+    setContentSummary('');
+    setIsLoadingContentSummary(false);
+  }, []);
 
   useEffect(() => {
     if (!url) {
@@ -38,12 +43,17 @@ export function useContentSummary(url: string | undefined) {
     fetchContentSummary();
   }, [url]);
 
-  return { contentSummary, isLoadingContentSummary };
+  return { contentSummary, isLoadingContentSummary, resetContentSummary };
 }
 
 export function useCommentsSummary(comments: CommentType[]) {
-  const [commentsSummary, setCommentsSummary] = useState('');
+  const [commentsSummary, setCommentsSummary] = useState<string>('');
   const [isLoadingCommentsSummary, setIsLoadingCommentsSummary] = useState(false);
+
+  const resetCommentsSummary = useCallback(() => {
+    setCommentsSummary('');
+    setIsLoadingCommentsSummary(false);
+  }, []);
 
   useEffect(() => {
     if (comments.length === 0) {
@@ -71,5 +81,5 @@ export function useCommentsSummary(comments: CommentType[]) {
     fetchCommentsSummary();
   }, [comments]);
 
-  return { commentsSummary, isLoadingCommentsSummary };
+  return { commentsSummary, isLoadingCommentsSummary, resetCommentsSummary };
 } 
