@@ -1,170 +1,69 @@
-# Qwik City App ⚡️
+# HN Reader
 
-- [Qwik Docs](https://qwik.dev/)
-- [Discord](https://qwik.dev/chat)
-- [Qwik GitHub](https://github.com/QwikDev/qwik)
-- [@QwikDev](https://twitter.com/QwikDev)
-- [Vite](https://vitejs.dev/)
+一个现代化的 Hacker News 阅读器，提供评论摘要和内容摘要功能。
 
----
+## 特性
 
-## Project Structure
+- 📱 响应式设计，支持移动端和桌面端
+- 🔄 无限滚动加载更多故事
+- 🤖 使用 Google Gemini 自动生成评论摘要
+- 📝 自动生成文章内容摘要
+- 💾 使用 Redis 缓存摘要结果
+- ⚡️ 快速加载和平滑过渡
+- 🎨 现代化的 UI 设计
 
-This project is using Qwik with [QwikCity](https://qwik.dev/qwikcity/overview/). QwikCity is just an extra set of tools on top of Qwik to make it easier to build a full site, including directory-based routing, layouts, and more.
+## 技术栈
 
-Inside your project, you'll see the following directory structure:
+- **框架**: [Next.js 14](https://nextjs.org/)
+- **样式**: [Tailwind CSS](https://tailwindcss.com/)
+- **AI**: [Google Gemini](https://ai.google.dev/)
+- **缓存**: [Upstash Redis](https://upstash.com/)
+- **部署**: [Vercel](https://vercel.com)
 
-```
-├── public/
-│   └── ...
-└── src/
-    ├── components/
-    │   └── ...
-    └── routes/
-        └── ...
-```
+## 本地开发
 
-- `src/routes`: Provides the directory-based routing, which can include a hierarchy of `layout.tsx` layout files, and an `index.tsx` file as the page. Additionally, `index.ts` files are endpoints. Please see the [routing docs](https://qwik.dev/qwikcity/routing/overview/) for more info.
-
-- `src/components`: Recommended directory for components.
-
-- `public`: Any static assets, like images, can be placed in the public directory. Please see the [Vite public directory](https://vitejs.dev/guide/assets.html#the-public-directory) for more info.
-
-## Add Integrations and deployment
-
-Use the `pnpm qwik add` command to add additional integrations. Some examples of integrations includes: Cloudflare, Netlify or Express Server, and the [Static Site Generator (SSG)](https://qwik.dev/qwikcity/guides/static-site-generation/).
-
-```shell
-pnpm qwik add # or `pnpm qwik add`
-```
-
-## Development
-
-Development mode uses [Vite's development server](https://vitejs.dev/). The `dev` command will server-side render (SSR) the output during development.
-
-```shell
-npm start # or `pnpm start`
-```
-
-> Note: during dev mode, Vite may request a significant number of `.js` files. This does not represent a Qwik production build.
-
-## Preview
-
-The preview command will create a production build of the client modules, a production build of `src/entry.preview.tsx`, and run a local server. The preview server is only for convenience to preview a production build locally and should not be used as a production server.
-
-```shell
-pnpm preview # or `pnpm preview`
-```
-
-## Production
-
-The production build will generate client and server modules by running both client and server build commands. The build command will use Typescript to run a type check on the source code.
-
-```shell
-pnpm build # or `pnpm build`
-```
-
-## Hacker News Reader
-
-A modern Hacker News reader built with Qwik, featuring infinite scroll and nested comments.
-
-## Features
-
-- Infinite scroll news list
-- Nested comments up to 3 levels deep
-- Relative time display
-- Mobile-friendly responsive design
-- Modern UI with Tailwind CSS
-
-## Development
+1. 克隆仓库：
 
 ```bash
-# Install dependencies
+git clone https://github.com/dickeylth/news-reader.git
+cd news-reader
+```
+
+2. 安装依赖：
+
+```bash
 pnpm install
-
-# Start development server
-pnpm start
 ```
 
-## Deployment
+3. 配置环境变量，创建 `.env.local` 文件：
 
-This project can be deployed to various platforms. Here are the steps for some popular options:
+```env
+GEMINI_API_KEY=your_gemini_api_key
+KV_REST_API_URL=your_upstash_redis_url
+KV_REST_API_TOKEN=your_upstash_redis_token
+```
 
-### Deploy to Vercel
-
-1. Push your code to a GitHub repository
-2. Go to [Vercel](https://vercel.com)
-3. Click "New Project"
-4. Import your GitHub repository
-5. Select "Qwik" as the framework
-6. Deploy!
-
-The following environment variables will be automatically set by Vercel.
-
-### Deploy to Netlify
-
-1. Push your code to a GitHub repository
-2. Go to [Netlify](https://netlify.com)
-3. Click "New site from Git"
-4. Choose your repository
-5. Build command: `pnpm build`
-6. Publish directory: `dist`
-7. Deploy!
-
-## Build
-
-To build for production:
+4. 启动开发服务器：
 
 ```bash
-pnpm build
+pnpm dev
 ```
 
-This will generate a `dist` folder with your compiled code.
+5. 打开 [http://localhost:3000](http://localhost:3000) 查看应用
 
-## License
+## 主要功能
 
-MIT
+- **故事列表**: 展示最新的 Hacker News 故事
+- **内容摘要**: 自动生成文章内容的中文摘要
+- **评论摘要**: 使用 AI 总结评论区的主要观点
+- **缓存机制**: 使用 Redis 缓存摘要结果，提高响应速度
+- **骨架屏**: 优化加载体验
+- **错误处理**: 友好的错误提示和重试机制
 
-## Vercel Edge
+## 贡献
 
-This starter site is configured to deploy to [Vercel Edge Functions](https://vercel.com/docs/concepts/functions/edge-functions), which means it will be rendered at an edge location near to your users.
+欢迎提交 Pull Request 或创建 Issue！
 
-## Installation
+## 许可
 
-The adaptor will add a new `vite.config.ts` within the `adapters/` directory, and a new entry file will be created, such as:
-
-```
-└── adapters/
-    └── vercel-edge/
-        └── vite.config.ts
-└── src/
-    └── entry.vercel-edge.tsx
-```
-
-Additionally, within the `package.json`, the `build.server` script will be updated with the Vercel Edge build.
-
-## Production build
-
-To build the application for production, use the `build` command, this command will automatically run `pnpm build.server` and `pnpm build.client`:
-
-```shell
-pnpm build
-```
-
-[Read the full guide here](https://github.com/QwikDev/qwik/blob/main/starters/adapters/vercel-edge/README.md)
-
-## Dev deploy
-
-To deploy the application for development:
-
-```shell
-pnpm deploy
-```
-
-Notice that you might need a [Vercel account](https://docs.Vercel.com/get-started/) in order to complete this step!
-
-## Production deploy
-
-The project is ready to be deployed to Vercel. However, you will need to create a git repository and push the code to it.
-
-You can [deploy your site to Vercel](https://vercel.com/docs/concepts/deployments/overview) either via a Git provider integration or through the Vercel CLI.
+MIT License
