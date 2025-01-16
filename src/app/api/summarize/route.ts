@@ -72,7 +72,10 @@ export async function POST(request: NextRequest) {
     const cacheService = new RedisCacheService();
     const cachedSummary = await cacheService.getSummary(cacheKey);
     if (cachedSummary) {
-      return NextResponse.json({ summary: cachedSummary });
+      return NextResponse.json({
+        summary: cachedSummary,
+        fromCache: true 
+      });
     }
 
     const summary = await geminiService.summarize(textToSummarize);
