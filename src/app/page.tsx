@@ -5,18 +5,20 @@ import type { Story } from '@/types/hackernews';
 import StoryItem from '@/components/StoryItem';
 import StoryDetail from '@/components/StoryDetail';
 import StoryItemSkeleton from '@/components/StoryItemSkeleton';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function Home() {
   const [stories, setStories] = useState<Story[]>([]);
   const [selectedStoryId, setSelectedStoryId] = useState<number | null>(null);
   const [page, setPage] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [isFirstLoading, setIsFirstLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const ITEMS_PER_PAGE = 10;
 
   const loadMoreStories = async () => {
-    if (loading || !hasMore) return;
-    setLoading(true);
+    if (isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
 
     try {
       const response = await fetch('/api/stories?page=' + page);
@@ -31,7 +33,8 @@ export default function Home() {
     } catch (error) {
       console.error('Error loading stories:', error);
     } finally {
-      setLoading(false);
+      setIsLoadingMore(false);
+      setIsFirstLoading(false);
     }
   };
 
@@ -52,7 +55,7 @@ export default function Home() {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [page, loading, hasMore]);
+  }, [page, isLoadingMore, hasMore]);
 
   return (
     <main className="min-h-screen bg-gray-100">
@@ -61,7 +64,7 @@ export default function Home() {
           <div className="stories-column overflow-y-auto h-screen">
             <div className="px-4 py-8">
               <div className="space-y-4">
-                {loading ? (
+                {isFirstLoading ? (
                   Array.from({ length: 10 }).map((_, index) => (
                     <StoryItemSkeleton key={index} />
                   ))
@@ -77,7 +80,13 @@ export default function Home() {
                 )}
               </div>
               
-              {!loading && hasMore && (
+              {!isFirstLoading && isLoadingMore && (
+                <div className="text-center py-4">
+                  <LoadingSpinner />
+                </div>
+              )}
+              
+              {!isFirstLoading && !isLoadingMore && hasMore && (
                 <div className="text-center py-4">
                   <button 
                     onClick={loadMoreStories}
