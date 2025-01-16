@@ -6,14 +6,15 @@ import type { Comment as CommentType, Story } from '@/types/hackernews';
 import Comment from './Comment';
 import LoadingSpinner from './LoadingSpinner';
 import { useContentSummary, useCommentsSummary } from '@/hooks/useSummary';
+import RetryButton from './RetryButton';
 
 
 export default function StoryDetail({ storyId }: { storyId: string }) {
   const [storyData, setStoryData] = useState<{story: Story, comments: CommentType[]} | null>(null);
   const [isLoadingStory, setIsLoadingStory] = useState(false);
   
-  const { contentSummary, isLoadingContentSummary, contentError, resetContentSummary } = useContentSummary(storyData?.story.url);
-  const { commentsSummary, isLoadingCommentsSummary, commentsError, resetCommentsSummary } = useCommentsSummary(storyData?.comments || []);
+  const { contentSummary, isLoadingContentSummary, contentError, resetContentSummary, retryContentSummary } = useContentSummary(storyData?.story.url);
+  const { commentsSummary, isLoadingCommentsSummary, commentsError, resetCommentsSummary, retryCommentsSummary } = useCommentsSummary(storyData?.comments || []);
 
   useEffect(() => {
     setStoryData(null);
@@ -74,7 +75,10 @@ export default function StoryDetail({ storyId }: { storyId: string }) {
             </div>
           ) : contentError ? (
             <div className="bg-red-50 rounded-lg p-4 mb-8">
-              <h2 className="text-lg font-semibold mb-2 text-red-700">内容摘要生成失败</h2>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-semibold text-red-700">内容摘要生成失败</h2>
+                <RetryButton onClick={retryContentSummary} />
+              </div>
               <p className="text-red-600">{contentError}</p>
             </div>
           ) : contentSummary && (
@@ -93,7 +97,10 @@ export default function StoryDetail({ storyId }: { storyId: string }) {
             </div>
           ) : commentsError ? (
             <div className="bg-red-50 rounded-lg p-4 mb-8">
-              <h2 className="text-lg font-semibold mb-2 text-red-700">评论摘要生成失败</h2>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-semibold text-red-700">评论摘要生成失败</h2>
+                <RetryButton onClick={retryCommentsSummary} />
+              </div>
               <p className="text-red-600">{commentsError}</p>
             </div>
           ) : commentsSummary && (
